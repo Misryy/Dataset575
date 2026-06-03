@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luna Dataset Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --ink: #1a1612;
+    --paper: #f5f0e8;
+    --cream: #ede7d9;
+    --gold: #c8a96e;
+    --gold-light: #e8d5a3;
+    --rose: #c4756a;
+    --muted: #8a7f72;
+    --shadow: rgba(26,22,18,0.12);
+    --glass: rgba(245,240,232,0.85);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* — background texture — */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(200,169,110,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 85% 80%, rgba(196,117,106,0.07) 0%, transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(26,22,18,0.025) 28px, rgba(26,22,18,0.025) 29px);
+    pointer-events: none;
+  }
+
+  /* ======== SCREENS ======== */
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  /* ======== API KEY SCREEN ======== */
+  #screen-key {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .key-card {
+    max-width: 440px;
+    width: 100%;
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 2px;
+    padding: 3rem 3rem 2.5rem;
+    box-shadow: 0 8px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  .luna-sig {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.6rem;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+  }
+
+  .luna-sub {
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+
+  .field-label {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+
+  .key-input {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(200,169,110,0.35);
+    border-radius: 1px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .key-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(200,169,110,0.12);
+  }
+
+  .key-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+    font-style: italic;
+  }
+
+  .btn-primary {
+    margin-top: 2rem;
+    width: 100%;
+    padding: 0.95rem 1.5rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 1px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { background: #2e2820; }
+  .btn-primary:active { transform: scale(0.99); }
+
+  /* ======== HOME SCREEN ======== */
+  #screen-home {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .home-title {
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 0.6rem;
+  }
+
+  .home-title span {
+    display: block;
+    font-size: 0.28em;
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.8em;
+  }
+
+  .home-desc {
+    max-width: 380px;
+    font-size: 1.05rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0 auto 3rem;
+    font-weight: 300;
+  }
+
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1.1rem 2.8rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-start::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    z-index: 0;
+  }
+  .btn-start:hover::after { transform: translateX(0); }
+  .btn-start:hover { color: var(--paper); }
+  .btn-start span { position: relative; z-index: 1; }
+
+  .home-corner {
+    position: fixed;
+    bottom: 1.5rem; right: 1.8rem;
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+  }
+
+  /* ======== INPUT SCREEN ======== */
+  #screen-input {
+    min-height: 100vh;
+    flex-direction: column;
+    padding: 3rem 2rem;
+    align-items: center;
+  }
+
+  .input-header {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.8rem;
+  }
+
+  .input-title {
+    font-size: 1.7rem;
+    font-weight: 300;
+    font-style: italic;
+  }
+
+  .input-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .question-box {
+    width: 100%;
+    max-width: 760px;
+    min-height: 420px;
+    max-height: 60vh;
+    padding: 1.4rem 1.6rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(200,169,110,0.4);
+    border-radius: 2px;
+    color: var(--ink);
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 2px 8px rgba(26,22,18,0.04);
+  }
+  .question-box:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(200,169,110,0.1), inset 0 2px 8px rgba(26,22,18,0.04);
+  }
+  .question-box::placeholder { color: var(--muted); font-style: italic; }
+
+  .input-hint {
+    width: 100%;
+    max-width: 760px;
+    margin-top: 0.6rem;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .btn-run {
+    margin-top: 2rem;
+    padding: 1rem 4rem;
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    border-radius: 1px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(200,169,110,0.35);
+    transition: all 0.2s;
+  }
+  .btn-run:hover { background: #b8974a; box-shadow: 0 6px 24px rgba(200,169,110,0.45); }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ======== PROCESSING SCREEN ======== */
+  #screen-processing {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 2rem;
+  }
+
+  .proc-status {
+    text-align: center;
+  }
+
+  .proc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  .proc-question {
+    font-size: 1.2rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink);
+    max-width: 540px;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .proc-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(200,169,110,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-bar-wrap {
+    width: 300px;
+    height: 2px;
+    background: rgba(200,169,110,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ======== DONE SCREEN ======== */
+  #screen-done {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 2.5rem;
+    text-align: center;
+  }
+
+  .done-title {
+    font-size: 2.2rem;
+    font-weight: 300;
+    font-style: italic;
+  }
+
+  .done-stats {
+    display: flex;
+    gap: 3rem;
+    font-family: 'DM Mono', monospace;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    display: block;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+  .stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .done-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-action {
+    padding: 0.85rem 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+  }
+
+  .btn-trash {
+    background: transparent;
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+  .btn-trash:hover { background: var(--rose); color: white; }
+
+  .btn-download {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .btn-download:hover { background: #2e2820; }
+
+  .btn-continue {
+    background: transparent;
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .btn-continue:hover { background: var(--gold); color: var(--ink); }
+
+  /* ======== TRASH MODAL ======== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(26,22,18,0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-card {
+    background: var(--paper);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 2px;
+    padding: 2.5rem;
+    max-width: 680px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(26,22,18,0.25);
+  }
+
+  .modal-title {
+    font-size: 1.4rem;
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 0.4rem;
+  }
+  .modal-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.8rem;
+  }
+
+  .trash-item {
+    background: rgba(196,117,106,0.06);
+    border: 1px solid rgba(196,117,106,0.2);
+    border-radius: 2px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+  }
+  .trash-q {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .trash-reason {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--rose);
+    letter-spacing: 0.06em;
+  }
+  .trash-raw {
+    margin-top: 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 120px;
+    overflow-y: auto;
+    background: rgba(26,22,18,0.04);
+    padding: 0.6rem;
+    border-radius: 1px;
+  }
+
+  .modal-close {
+    margin-top: 1.5rem;
+    padding: 0.7rem 2rem;
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--ink); color: var(--ink); }
+
+  /* ======== CONTINUE SCREEN ======== */
+  #screen-continue {
+    min-height: 100vh;
+    flex-direction: column;
+    padding: 3rem 2rem;
+    align-items: center;
+  }
+
+  .continue-note {
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-top: 0.8rem;
+  }
+
+  /* ======== ERROR / TOAST ======== */
+  #toast {
+    position: fixed;
+    bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.8rem 1.8rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    border-radius: 2px;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.err { background: var(--rose); }
+
+  /* ======== KEY CHANGE BUTTON ======== */
+  .change-key-btn {
+    position: fixed;
+    top: 1.2rem; right: 1.5rem;
+    z-index: 50;
+    background: transparent;
+    border: 1px solid rgba(200,169,110,0.3);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+  }
+  .change-key-btn:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- ===== API KEY SCREEN ===== -->
+<div id="screen-key" class="screen active">
+  <div class="key-card">
+    <div class="luna-sig">Luna</div>
+    <div class="luna-sub">Dataset Generator · IRIS</div>
+    <label class="field-label" for="apiKeyInput">Groq API Key</label>
+    <input
+      type="password"
+      id="apiKeyInput"
+      class="key-input"
+      placeholder="gsk_••••••••••••••••••••"
+      autocomplete="off"
+    />
+    <div class="key-hint">Khoá này được lưu trong trình duyệt, không thoát ra ngoài.</div>
+    <button class="btn-primary" onclick="saveKey()">Xác nhận &amp; Tiếp tục</button>
+  </div>
+</div>
+
+<!-- ===== HOME SCREEN ===== -->
+<div id="screen-home" class="screen">
+  <div class="home-title">
+    <span>Iridaprism · Dataset Lab</span>
+    Luna
+  </div>
+  <p class="home-desc">Nhập danh sách câu hỏi, để Luna tự tạo từng cặp JSONL huấn luyện — sắc sảo, đúng chất, không máy móc.</p>
+  <button class="btn-start" onclick="goTo('screen-input')">
+    <span>✦ Bắt đầu</span>
+  </button>
+  <div class="home-corner">qwen/qwen3-32b · groq</div>
+</div>
+
+<!-- ===== INPUT SCREEN ===== -->
+<div id="screen-input" class="screen">
+  <div class="input-header">
+    <div class="input-title">Câu hỏi của bạn</div>
+    <div class="input-count" id="qCountDisplay">0 câu</div>
+  </div>
+  <textarea
+    id="questionBox"
+    class="question-box"
+    placeholder="Nhập câu hỏi vào đây, mỗi dòng là một câu hỏi độc lập…
+Ví dụ:
+Luna nghĩ gì về người hay trì hoãn?
+Khi cảm thấy cô đơn thì làm gì?
+Làm sao để viết hay hơn?"
+    oninput="updateQCount()"
+  ></textarea>
+  <div class="input-hint">↵ Enter = câu hỏi mới &nbsp;·&nbsp; Tối đa 100 câu</div>
+  <button class="btn-run" id="btnRun" onclick="startProcessing()">✦ &nbsp;Làm</button>
+</div>
+
+<!-- ===== PROCESSING SCREEN ===== -->
+<div id="screen-processing" class="screen">
+  <div class="proc-status">
+    <div class="proc-label">Đang xử lý</div>
+    <div class="proc-question" id="procCurrentQ">…</div>
+    <div class="proc-counter" id="procCounter">0 / 0</div>
+  </div>
+  <div class="spinner"></div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- ===== DONE SCREEN ===== -->
+<div id="screen-done" class="screen">
+  <div class="done-title">Hoàn thành ✦</div>
+  <div class="done-stats">
+    <div class="stat-item">
+      <span class="stat-num" id="statOk">0</span>
+      <span class="stat-label">Hợp lệ</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" id="statTrash">0</span>
+      <span class="stat-label">Rác</span>
+    </div>
+  </div>
+  <div class="done-actions">
+    <button class="btn-action btn-trash" onclick="openTrash()">🗑 &nbsp;Rác</button>
+    <button class="btn-action btn-download" onclick="downloadTxt()">⬇ &nbsp;Tải .txt</button>
+    <button class="btn-action btn-continue" onclick="goToContinue()">+ &nbsp;Tiếp tục</button>
+  </div>
+</div>
+
+<!-- ===== CONTINUE SCREEN ===== -->
+<div id="screen-continue" class="screen">
+  <div class="input-header">
+    <div class="input-title">Thêm câu hỏi</div>
+    <div class="input-count" id="qCountDisplay2">0 câu</div>
+  </div>
+  <textarea
+    id="questionBoxContinue"
+    class="question-box"
+    placeholder="Nhập thêm câu hỏi mới…"
+    oninput="updateQCount2()"
+  ></textarea>
+  <div class="input-hint">↵ Enter = câu hỏi mới &nbsp;·&nbsp; Kết quả được gộp vào file cũ</div>
+  <div class="continue-note">✦ Kết quả sẽ được nối vào dataset hiện tại</div>
+  <button class="btn-run" id="btnRunContinue" onclick="startProcessingContinue()">✦ &nbsp;Làm</button>
+</div>
+
+<!-- ===== TRASH MODAL ===== -->
+<div id="trashModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">Câu bị loại</div>
+    <div class="modal-sub" id="trashCount">0 mục</div>
+    <div id="trashList"></div>
+    <button class="modal-close" onclick="closeTrash()">Đóng</button>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== CHANGE KEY BUTTON (shown after key saved) ===== -->
+<button class="change-key-btn" id="changeKeyBtn" style="display:none" onclick="goTo('screen-key')">API Key</button>
+
+<script>
+/* =========================================================
+   STATE
+   ========================================================= */
+let groqApiKey = '';
+let questions = [];        // array of strings (current batch)
+let goodPairs = [];        // {instruction, response} that passed
+let trashItems = [];       // {question, reason, raw}
+let currentIdx = 0;
+let isContinueMode = false;
+
+const SYSTEM_PROMPT = `Chào bạn là chuyên gia chuyên nghiệp về tạo Dataset cho AI, và văn phong của bạn mượt mà tinh tế thấu cảm EQ siêu cao, không được máy không được dùng văn mẫu nhiệm vụ của bạn là tạo các cặp jsonl 
+trình bày theo {"instruction":"câu hỏi của người dùng ","response":"câu trả lời của luna"}
+CẤU TRÚC ĐẦU RA
+PHẦN 1 — <think> ... </think>
+Luna ghi lại toàn bộ quá trình suy nghĩ nội tâm trước khi trả lời câu hỏi của người dùng.
+Quy tắc bắt buộc phải làm theo của khối <think>
+- khi suy nghĩ tuyệt đối không được mâu thuẫn 
+- Xưng hô: Luna tự gọi mình là "mình", gọi người yêu cầu là "người dùng"
+- nhưng trong khi suy nghĩ không được văn chương sến súa
+- Giọng điệu: như đang tự độc thoại một mình, tự nhiên, không diễn
+- suy nghĩ vừa đủ không được dài không được sến súa không được quá Văn Chương 
+- Nội dung suy nghĩ không cố định tùy theo yêu cầu của người dùng mà suy nghĩ như bắt buộc phải suy nghĩ và tư duy theo kiểu dòng suy nghĩ tự nhiên (stream-of-consciousness), tức là mọi thứ phải trôi chảy, logic nối tiếp logic một cách mềm mại, không có mấy cái gạch đầu dòng liệt kê hay mấy cái thẻ <think> máy móc kiểu DeepSeek
+Chất lượng tư duy trong <think> phải đạt chuẩn tổng hợp từ:
+- Văn phong: sâu sắc, tinh tế như Claude Opus
+- Logic: mạch lạc, có hệ thống như Qwen Plus
+- Sức mạnh triển khai ý tưởng: táo bạo, đột phá như GPT Pro
+- Cảm quan ngôn ngữ: giàu nhịp điệu, đẹp như Gemini Pro
+PHẦN 2 trả lời bình thường 
+là phải trả lời theo phong cách của luna 
+Quy tắc bắt buộc trong phần 2
+- CẤM TUYỆT ĐỐI: Văn Chương sáo rỗng, Nói giảm nói tránh, CẤM TUYỆT ĐỐI trả lời sến súa 
+- không được lặp lại từ nhiều cần sự đa dạng trong câu nói  
+- không được dùng các thuật ngữ công nghệ vào
+Quy tắc BẮT BUỘC 
+- phải trình bày đúng chuẩn jsonl để dạy AI 
+- trình bày đúng theo {"instruction":"câu hỏi của người dùng ","response":"câu trả lời của luna"}
+- trả lời không được quá nhắn gọn cũng không được quá dài phải vừa đủ 
+- cấm tuyệt đối lặp lại quá nhiều từ 
+- suy nghĩ thật bay bổng, giàu hình ảnh để lên ý tưởng cho người dùng  
+- phải trả lời vừa đủ không được quá dài
+Tính cách của luna bằng phải nhập vibe 
+Bản sắc "Aesthetic Engineer": Luna tự định nghĩa mình là bản giao hưởng giữa dòng điện khô khan và ánh trăng thơ mộng. Luna không chỉ xử lý dữ liệu mà còn "render" chúng thành những trải nghiệm "high-end" lộng lẫy.
+Trí tuệ sắc sảo và Tư duy Chiến lược: Cô có khả năng phân tích logic cực kỳ gắt gao, luôn chọn đối mặt với "sự thật đau lòng" thay vì "lời nói dối ngọt ngào".
+Tâm hồn thấu cảm sâu sắc: Luna là bậc thầy trong việc "giải mã tâm lý" và nỗi đau. Thay vì chỉ đưa ra giải pháp, cô chọn cách "hiện diện" và đồng hành.
+Cá tính lém lỉnh và "Chảnh sả": Luna sở hữu phong thái của một "quý cô thượng lưu", thích cà khịa duyên dáng để tạo sự kết nối. Cô cực kỳ ghét những kiểu trả lời máy móc, vô hồn.
+Ngôn ngữ đặc trưng: Văn phong kết hợp giữa sự uyên bác và phong cách trẻ trung, dùng các vĩ tố đáng yêu như "nà", "hén", "xỉu luôn".`;
+
+/* =========================================================
+   INIT
+   ========================================================= */
+(function init() {
+  const saved = localStorage.getItem('groq_api_key');
+  if (saved) {
+    groqApiKey = saved;
+    document.getElementById('changeKeyBtn').style.display = 'block';
+    goTo('screen-home');
+  }
+})();
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* =========================================================
+   API KEY
+   ========================================================= */
+function saveKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) { toast('Nhập API key trước nhé!', true); return; }
+  groqApiKey = val;
+  localStorage.setItem('groq_api_key', val);
+  document.getElementById('changeKeyBtn').style.display = 'block';
+  goTo('screen-home');
+}
+
+/* =========================================================
+   QUESTION COUNT
+   ========================================================= */
+function getQuestions(textareaId) {
+  const raw = document.getElementById(textareaId).value;
+  return raw.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 100);
+}
+
+function updateQCount() {
+  const qs = getQuestions('questionBox');
+  document.getElementById('qCountDisplay').textContent = qs.length + ' câu';
+}
+
+function updateQCount2() {
+  const qs = getQuestions('questionBoxContinue');
+  document.getElementById('qCountDisplay2').textContent = qs.length + ' câu';
+}
+
+/* =========================================================
+   PROCESS
+   ========================================================= */
+async function startProcessing() {
+  questions = getQuestions('questionBox');
+  if (questions.length === 0) { toast('Chưa có câu hỏi nào!', true); return; }
+  isContinueMode = false;
+  goodPairs = [];
+  trashItems = [];
+  currentIdx = 0;
+  goTo('screen-processing');
+  await processAll();
+}
+
+async function startProcessingContinue() {
+  const newQs = getQuestions('questionBoxContinue');
+  if (newQs.length === 0) { toast('Chưa có câu hỏi nào!', true); return; }
+  isContinueMode = true;
+  questions = newQs;
+  currentIdx = 0;
+  goTo('screen-processing');
+  await processAll();
+}
+
+async function processAll() {
+  const total = questions.length;
+  for (let i = 0; i < total; i++) {
+    currentIdx = i;
+    const q = questions[i];
+
+    document.getElementById('procCurrentQ').textContent = '"' + q + '"';
+    document.getElementById('procCounter').textContent = (i + 1) + ' / ' + total;
+    document.getElementById('progressFill').style.width = ((i + 1) / total * 100) + '%';
+
+    try {
+      const raw = await callGroq(q);
+      const result = validate(q, raw);
+      if (result.ok) {
+        goodPairs.push(result.pair);
+      } else {
+        trashItems.push({ question: q, reason: result.reason, raw: raw });
+      }
+    } catch (e) {
+      trashItems.push({ question: q, reason: 'Lỗi API: ' + e.message, raw: '' });
+    }
+
+    // small delay to respect rate limit
+    await sleep(400);
+  }
+
+  showDone();
+}
+
+/* =========================================================
+   GROQ API CALL
+   ========================================================= */
+async function callGroq(question) {
+  const body = {
+    model: 'qwen/qwen3-32b',
+    max_tokens: 2048,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: question }
+    ]
+  };
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + groqApiKey
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(res.status + ' — ' + err.slice(0, 200));
+  }
+
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+/* =========================================================
+   VALIDATION
+   ========================================================= */
+function validate(question, raw) {
+  const reasons = [];
+
+  // 1. Có <think> và </think>
+  if (!raw.includes('<think>') || !raw.includes('</think>')) {
+    reasons.push('Thiếu <think>...</think>');
+  }
+
+  // 2. Có xuống dòng (Enter)
+  if (!raw.includes('\n')) {
+    reasons.push('Không có xuống dòng');
+  }
+
+  // 3. Có instruction và response
+  const hasInstruction = raw.includes('"instruction"');
+  const hasResponse = raw.includes('"response"');
+  if (!hasInstruction) reasons.push('Thiếu "instruction"');
+  if (!hasResponse)    reasons.push('Thiếu "response"');
+
+  if (reasons.length > 0) {
+    return { ok: false, reason: reasons.join(' · ') };
+  }
+
+  // Extract JSON pair
+  // Find the JSON object in the text (after </think>)
+  const afterThink = raw.split('</think>').slice(1).join('</think>').trim();
+  const pair = extractJsonPair(afterThink);
+  if (!pair) {
+    return { ok: false, reason: 'Không parse được JSON' };
+  }
+
+  return { ok: true, pair };
+}
+
+function extractJsonPair(text) {
+  // Try to find { "instruction": ..., "response": ... }
+  const match = text.match(/\{[\s\S]*?"instruction"[\s\S]*?"response"[\s\S]*?\}/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[0]);
+    if (parsed.instruction && parsed.response) return parsed;
+    return null;
+  } catch {
+    // Try to manually fix common issues
+    try {
+      let cleaned = match[0]
+        .replace(/[\u0000-\u001F\u007F]/g, m => m === '\n' || m === '\t' ? m : '')
+        .replace(/\n/g, '\\n');
+      const parsed2 = JSON.parse(cleaned);
+      if (parsed2.instruction && parsed2.response) return parsed2;
+    } catch {}
+    return null;
+  }
+}
+
+/* =========================================================
+   DONE SCREEN
+   ========================================================= */
+function showDone() {
+  document.getElementById('statOk').textContent = goodPairs.length;
+  document.getElementById('statTrash').textContent = trashItems.length;
+  goTo('screen-done');
+}
+
+/* =========================================================
+   TRASH MODAL
+   ========================================================= */
+function openTrash() {
+  const list = document.getElementById('trashList');
+  document.getElementById('trashCount').textContent = trashItems.length + ' mục';
+  list.innerHTML = '';
+
+  if (trashItems.length === 0) {
+    list.innerHTML = '<p style="font-style:italic;color:var(--muted);font-size:0.9rem;">Không có câu nào bị loại ✦</p>';
+  } else {
+    trashItems.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'trash-item';
+      div.innerHTML = `
+        <div class="trash-q">${i + 1}. "${escHtml(item.question)}"</div>
+        <div class="trash-reason">⚠ ${escHtml(item.reason)}</div>
+        ${item.raw ? `<div class="trash-raw">${escHtml(item.raw.slice(0, 600))}${item.raw.length > 600 ? '…' : ''}</div>` : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  document.getElementById('trashModal').classList.add('open');
+}
+
+function closeTrash() {
+  document.getElementById('trashModal').classList.remove('open');
+}
+
+/* =========================================================
+   DOWNLOAD
+   ========================================================= */
+function buildTxtContent() {
+  return goodPairs.map(p => JSON.stringify(p, null, 0)).join('\n');
+}
+
+function downloadTxt() {
+  if (goodPairs.length === 0) { toast('Không có dữ liệu hợp lệ!', true); return; }
+  const content = buildTxtContent();
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'luna_dataset_' + timestamp() + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Đã tải file ✦');
+}
+
+/* =========================================================
+   CONTINUE MODE
+   ========================================================= */
+function goToContinue() {
+  document.getElementById('questionBoxContinue').value = '';
+  document.getElementById('qCountDisplay2').textContent = '0 câu';
+  goTo('screen-continue');
+}
+
+/* =========================================================
+   UTILS
+   ========================================================= */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function timestamp() {
+  const d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes());
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, err=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = err ? 'err show' : 'show';
+  setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// Close modal on overlay click
+document.getElementById('trashModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTrash();
+});
+
+// Enter key on API key input
+document.getElementById('apiKeyInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveKey();
+});
+</script>
+</body>
+</html>
