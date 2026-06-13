@@ -4,22 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI EQ Writer 70B</title>
+    <title>AI EQ Writer 70B Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f5f3ff; /* Tím oải hương siêu nhạt, cực dịu mắt */
+            --bg-color: #f5f3ff; /* Tím oải hương nhạt cực kỳ dịu mắt */
             --primary-color: #8b5cf6; /* Tím quyến rũ */
             --primary-hover: #7c3aed;
             --text-main: #1e1b4b;
-            --box-bg: #ffffff;
         }
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
         }
         .glass-box {
             background: rgba(255, 255, 255, 0.9);
@@ -35,7 +36,8 @@
         
         .view-section {
             display: none;
-            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-direction: column;
+            animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         .view-section.active {
             display: flex;
@@ -43,6 +45,9 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.98); }
             to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         #toast {
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -53,7 +58,7 @@
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col p-4 box-border">
+<body class="p-4 md:p-6 box-border flex flex-col justify-between">
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-4 shrink-0">
@@ -61,132 +66,140 @@
             <span class="p-2 bg-violet-100 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-violet-500 animate-pulse"></i></span>
             Llama 70B EQ
         </h1>
-        <button onclick="switchView('settingsView')" class="text-violet-400 hover:text-violet-600 transition-all p-2 rounded-xl hover:bg-violet-50">
+        <button onclick="openSettings()" class="text-violet-400 hover:text-violet-600 transition-all p-2 rounded-xl hover:bg-violet-50">
             <i class="fa-solid fa-key text-xl"></i>
         </button>
     </div>
 
-    <!-- VIEW 1: Cấu hình API Keys (Không ẩn key) -->
-    <div id="settingsView" class="view-section flex-col h-full glass-box rounded-3xl p-6 relative">
-        <button onclick="switchView('mainView')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-2xl p-2 rounded-full transition-all">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <h2 class="text-2xl font-bold mb-2 text-violet-800">Cấu hình API Groq</h2>
-        <p class="text-sm text-slate-500 mb-6">Nhập tối đa 3 API key. Hệ thống tự động xoay vòng nếu có lỗi. Key sẽ hiển thị công khai để bạn dễ kiểm soát.</p>
+    <!-- MAIN CONTAINER (Tự động thích ứng kích thước) -->
+    <div class="flex-1 w-full flex flex-col justify-between gap-4 max-w-4xl mx-auto">
         
-        <div class="space-y-4 overflow-y-auto pb-10 flex-1">
-            <div>
-                <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 1 (Chính)</label>
-                <input type="text" id="api1" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 2 (Dự phòng 1)</label>
-                <input type="text" id="api2" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 3 (Dự phòng 2)</label>
-                <input type="text" id="api3" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
-            </div>
-        </div>
-        
-        <button onclick="saveApiKeys()" class="mt-auto w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-violet-200 transition-all active:scale-[0.98]">
-            Áp Dụng Cấu Hình
-        </button>
-    </div>
-
-    <!-- VIEW 2: Màn hình chính (Nhập câu hỏi) -->
-    <div id="mainView" class="view-section active flex-col h-full flex-1 w-full gap-4">
-        <!-- Khung nhập chiếm 4/5 -->
-        <div class="flex-[4] flex flex-col relative glass-box rounded-3xl p-3 shadow-sm">
-            <textarea id="questionInput" class="w-full h-full p-4 bg-transparent resize-none outline-none text-base text-slate-700 leading-relaxed placeholder-slate-400" 
-            placeholder="Nhập danh sách câu hỏi tại đây...&#10;Mỗi lần nhấn Enter (xuống dòng) được tính là 1 câu hỏi.&#10;Hỗ trợ tối đa 50 câu hỏi đồng thời."></textarea>
-            <div class="absolute bottom-4 right-6 text-xs text-slate-400 font-semibold bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100" id="lineCount">0 / 50 câu hỏi</div>
-        </div>
-
-        <!-- Nút bắt đầu chiếm 1/5 -->
-        <div class="flex-[1] flex justify-center items-center">
-            <button onclick="startProcessing()" class="w-full h-full glass-box bg-violet-50 hover:bg-violet-100 rounded-3xl text-violet-600 font-black text-xl tracking-widest uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i> Khởi chạy Llama 70B
+        <!-- VIEW 1: Cấu hình API Keys -->
+        <div id="settingsView" class="view-section h-full flex-1 glass-box rounded-3xl p-6 relative">
+            <button onclick="closeSettings()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-2xl p-2 rounded-full transition-all">
+                <i class="fa-solid fa-xmark"></i>
             </button>
-        </div>
-    </div>
-
-    <!-- VIEW 3: Đang xử lý câu trả lời -->
-    <div id="runningView" class="view-section flex-col h-full glass-box rounded-3xl p-6 flex items-center justify-center text-center">
-        <div class="relative flex items-center justify-center mb-8">
-            <div class="w-24 h-24 rounded-full border-4 border-violet-100 border-t-violet-500 animate-spin"></div>
-            <div class="absolute text-violet-500 font-bold text-lg" id="percentageText">0%</div>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-800 mb-2" id="progressTitle">Văn sĩ Llama đang sáng tác...</h3>
-        <p class="text-violet-600 font-bold mb-6 text-lg" id="progressText">Câu 1 / 10</p>
-        <div class="w-full max-w-md bg-slate-100 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
-            <div id="progressBar" class="bg-violet-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
-        </div>
-        <div class="w-full p-4 bg-violet-50/50 rounded-2xl text-left border border-violet-100/50 text-slate-600 text-sm max-h-32 overflow-y-auto italic">
-            <span class="font-semibold not-italic text-violet-700">Đang trả lời:</span> <span id="currentQuestionPreview">...</span>
-        </div>
-    </div>
-
-    <!-- VIEW 4: Kết quả (Màn hình 4 nút chức năng) -->
-    <div id="resultView" class="view-section flex-col h-full gap-4">
-        <div class="flex-1 glass-box rounded-3xl p-6 flex flex-col items-center justify-center text-center">
-            <div class="w-20 h-20 bg-violet-100 text-violet-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm animate-bounce">
-                <i class="fa-solid fa-award"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Đã hoàn thành!</h2>
-            <p class="text-slate-500 mb-8 px-4 text-sm">Toàn bộ câu trả lời của AI đã được liên kết mượt mà thành một khối văn bản duy nhất.</p>
+            <h2 class="text-2xl font-bold mb-2 text-violet-800">Cấu hình API Groq</h2>
+            <p class="text-sm text-slate-500 mb-6">Nhập tối đa 3 API key để luân phiên sử dụng. Hệ thống tự động ghi nhớ và không ẩn key.</p>
             
-            <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
-                <!-- Nút 1: Tải về -->
-                <button onclick="downloadFile()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-violet-600 hover:bg-violet-50 flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fa-solid fa-cloud-arrow-down text-2xl"></i>
-                    <span class="font-bold text-sm">Tải về (.txt)</span>
-                </button>
-                <!-- Nút 2: Soi / Sửa -->
-                <button onclick="viewContent()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-indigo-500 hover:bg-indigo-50 flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fa-solid fa-magnifying-glass text-2xl"></i>
-                    <span class="font-bold text-sm">Soi 🔎 / Sửa</span>
-                </button>
-                <!-- Nút 3: Tiếp + -->
-                <button onclick="continueAsking()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-amber-500 hover:bg-amber-50 flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fa-solid fa-circle-plus text-2xl"></i>
-                    <span class="font-bold text-sm">Tiếp +</span>
-                </button>
-                <!-- Nút 4: Bỏ / Làm lại từ đầu -->
-                <button onclick="showConfirmModal()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-rose-500 hover:bg-rose-50 flex flex-col items-center gap-2 transition-all active:scale-95">
-                    <i class="fa-solid fa-trash-can text-2xl"></i>
-                    <span class="font-bold text-sm">Bỏ tất cả</span>
+            <div class="space-y-4 overflow-y-auto flex-1 mb-6 max-h-[50dvh]">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 1 (Chính)</label>
+                    <input type="text" id="api1" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 2 (Dự phòng 1)</label>
+                    <input type="text" id="api2" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-violet-600 uppercase tracking-wider">API Key 3 (Dự phòng 2)</label>
+                    <input type="text" id="api3" class="w-full p-3 rounded-xl border border-violet-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-mono text-sm bg-violet-50/30" placeholder="gsk_...">
+                </div>
+            </div>
+            
+            <button onclick="saveApiKeys(true)" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-violet-200 transition-all active:scale-[0.98]">
+                Áp Dụng Cấu Hình
+            </button>
+        </div>
+
+        <!-- VIEW 2: Màn hình chính (Nhập câu hỏi) -->
+        <div id="mainView" class="view-section active h-full flex-1 w-full gap-4">
+            <!-- Khung nhập chiếm phần lớn màn hình -->
+            <div class="flex-1 min-h-[50dvh] flex flex-col relative glass-box rounded-3xl p-3 shadow-sm">
+                <textarea id="questionInput" class="w-full h-full min-h-[45dvh] p-4 bg-transparent resize-none outline-none text-base text-slate-700 leading-relaxed placeholder-slate-400" 
+                placeholder="Nhập danh sách câu hỏi tại đây...&#10;Mỗi lần xuống dòng (Enter) được tính là 1 câu hỏi.&#10;Hỗ trợ tối đa 50 câu hỏi đồng thời."></textarea>
+                <div class="absolute bottom-4 right-6 text-xs text-slate-400 font-semibold bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100" id="lineCount">0 / 50 câu hỏi</div>
+            </div>
+
+            <!-- Nút bắt đầu (Chiếm diện tích gọn gàng phía dưới) -->
+            <div class="h-20 shrink-0">
+                <button onclick="startProcessing()" class="w-full h-full glass-box bg-violet-50 hover:bg-violet-100 rounded-3xl text-violet-600 font-black text-lg tracking-widest uppercase transition-all shadow-md active:scale-95 flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i> Khởi chạy Llama 70B
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- VIEW 5: Xem và Sửa văn bản trực tiếp -->
-    <div id="editView" class="view-section flex-col h-full gap-4">
-        <div class="flex justify-between items-center px-2">
-            <h2 class="text-xl font-bold text-violet-800 flex items-center gap-2">
-                <i class="fa-solid fa-file-pen"></i> Soi & Sửa Văn Bản
-            </h2>
-            <button onclick="saveEdit()" class="px-5 py-2 bg-violet-600 text-white font-bold rounded-xl shadow-md hover:bg-violet-700 active:scale-95 transition-all text-sm">
-                Lưu chỉnh sửa
+        <!-- VIEW 3: Đang tiến hành xử lý -->
+        <div id="runningView" class="view-section h-full flex-1 glass-box rounded-3xl p-6 flex items-center justify-center text-center">
+            <div class="relative flex items-center justify-center mb-8">
+                <div class="w-24 h-24 rounded-full border-4 border-violet-100 border-t-violet-500 animate-spin"></div>
+                <div class="absolute text-violet-500 font-bold text-lg" id="percentageText">0%</div>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">Đại văn hào đang suy ngẫm...</h3>
+            <p class="text-violet-600 font-bold mb-6 text-lg" id="progressText">Câu 1 / 10</p>
+            <div class="w-full max-w-md bg-slate-100 rounded-full h-3 mb-4 overflow-hidden shadow-inner mx-auto">
+                <div id="progressBar" class="bg-violet-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div class="w-full max-w-md p-4 bg-violet-50/50 rounded-2xl text-left border border-violet-100/50 text-slate-600 text-sm max-h-32 overflow-y-auto italic mx-auto">
+                <span class="font-semibold not-italic text-violet-700">Đang hỏi:</span> <span id="currentQuestionPreview">...</span>
+            </div>
+        </div>
+
+        <!-- VIEW 4: Kết quả cuối cùng -->
+        <div id="resultView" class="view-section h-full flex-1 gap-4">
+            <div class="flex-1 glass-box rounded-3xl p-6 flex flex-col items-center justify-center text-center">
+                <!-- Icon trạng thái động (Thành công / Hoặc Hoàn thành một phần do lỗi) -->
+                <div id="resultStatusIcon" class="w-20 h-20 bg-violet-100 text-violet-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <h2 id="resultTitle" class="text-2xl font-bold text-slate-800 mb-2">Đã hoàn thành!</h2>
+                <p id="resultSubtitle" class="text-slate-500 mb-6 px-4 text-sm">Nội dung của các câu hỏi được nối thẳng mạch lạc thành một bài viết hoàn chỉnh.</p>
+                
+                <!-- Hộp thông báo lỗi chi tiết nếu có -->
+                <div id="errorAlertBox" class="hidden w-full max-w-sm mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl text-left text-xs">
+                    <div class="font-bold mb-1 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> QUÁ TRÌNH BỊ GIÁN ĐOẠN:</div>
+                    <span id="errorAlertMessage">Lỗi không xác định</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    <button onclick="downloadFile()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-violet-600 hover:bg-violet-50 flex flex-col items-center gap-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-cloud-arrow-down text-2xl"></i>
+                        <span class="font-bold text-sm">Tải về (.txt)</span>
+                    </button>
+                    <button onclick="viewContent()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-indigo-500 hover:bg-indigo-50 flex flex-col items-center gap-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-magnifying-glass text-2xl"></i>
+                        <span class="font-bold text-sm">Soi 🔎 / Sửa</span>
+                    </button>
+                    <button onclick="continueAsking()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-amber-500 hover:bg-amber-50 flex flex-col items-center gap-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-circle-plus text-2xl"></i>
+                        <span class="font-bold text-sm">Tiếp +</span>
+                    </button>
+                    <button onclick="showConfirmModal()" class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 text-rose-500 hover:bg-rose-50 flex flex-col items-center gap-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-trash-can text-2xl"></i>
+                        <span class="font-bold text-sm">Bỏ tất cả</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 5: Chỉnh sửa trực tiếp -->
+        <div id="editView" class="view-section h-full flex-1 gap-4">
+            <div class="flex justify-between items-center px-2 shrink-0">
+                <h2 class="text-xl font-bold text-violet-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-pen"></i> Soi & Chỉnh Sửa
+                </h2>
+                <button onclick="saveEdit()" class="px-5 py-2 bg-violet-600 text-white font-bold rounded-xl shadow-md hover:bg-violet-700 active:scale-95 transition-all text-sm">
+                    Lưu thay đổi
+                </button>
+            </div>
+            <div class="flex-1 min-h-[45dvh] glass-box rounded-3xl p-2 relative shadow-sm">
+                <textarea id="editorInput" class="w-full h-full min-h-[40dvh] p-4 bg-transparent resize-none outline-none text-base text-slate-700 leading-relaxed font-serif"></textarea>
+            </div>
+            <button onclick="switchView('resultView')" class="w-full p-3 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-all active:scale-95 text-sm shrink-0">
+                Quay lại màn hình kết quả
             </button>
         </div>
-        <div class="flex-1 glass-box rounded-3xl p-2 relative shadow-sm">
-            <textarea id="editorInput" class="w-full h-full p-4 bg-transparent resize-none outline-none text-base text-slate-700 leading-relaxed font-serif"></textarea>
-        </div>
-        <button onclick="switchView('resultView')" class="w-full p-3 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-all active:scale-95 text-sm">
-            Quay lại kết quả
-        </button>
+
     </div>
 
-    <!-- CUSTOM CONFIRM MODAL (Thay thế confirm() cũ để tránh lỗi iframe) -->
+    <!-- CONFIRM MODAL (Tự code để tránh bị treo khi chạy iframe) -->
     <div id="customConfirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-violet-100 flex flex-col items-center text-center animate-fadeIn">
             <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-3xl mb-4">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-800 mb-2">Làm lại từ đầu?</h3>
-            <p class="text-sm text-slate-500 mb-6">Hành động này sẽ xoá sạch toàn bộ nội dung văn bản hiện tại. Bạn có chắc không?</p>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Thiết lập lại từ đầu?</h3>
+            <p class="text-sm text-slate-500 mb-6">Thao tác này sẽ dọn dẹp sạch sẽ toàn bộ câu hỏi và văn bản đã sáng tác. Bạn chắc chắn chứ?</p>
             <div class="flex gap-3 w-full">
                 <button onclick="closeConfirmModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-sm">Hủy bỏ</button>
                 <button onclick="confirmResetAll()" class="flex-1 py-3 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 transition-all text-sm shadow-md shadow-rose-100">Xác nhận xóa</button>
@@ -194,10 +207,10 @@
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed left-4 right-4 bg-slate-950 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+    <!-- TOAST THÔNG BÁO -->
+    <div id="toast" class="fixed left-4 right-4 bg-slate-950 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 max-w-md mx-auto">
         <i class="fa-solid fa-circle-info text-violet-400 text-xl" id="toastIcon"></i>
-        <span id="toastMessage" class="font-medium text-xs leading-relaxed">Thông báo</span>
+        <span id="toastMessage" class="font-medium text-xs leading-relaxed">Thông báo hệ thống</span>
     </div>
 
     <script>
@@ -205,24 +218,25 @@
         let apiKeys = ['', '', ''];
         let currentKeyIndex = 0;
         let finalGeneratedText = "";
-        
-        // System Prompt: Rất sắc sảo, siêu thông minh, giàu EQ, hành văn cực đỉnh và ĐI THẲNG vào câu trả lời, không chào hỏi lê thê.
+        let isAppending = false; // Trạng thái kiểm soát việc nối tiếp câu hỏi hay tạo mới hoàn toàn
+
+        // System Prompt tối ưu hóa EQ của đại văn hào Llama 70B
         const SYSTEM_PROMPT = `Bạn là một thực thể trí tuệ nhân tạo (AI) sở hữu Trí tuệ cảm xúc (EQ) tối thượng và kỹ năng ngôn từ kiệt xuất của một đại văn hào. 
 Nhiệm vụ của bạn là giải đáp khúc mắc một cách thấu suốt nhất.
 
 BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
-1. ĐI THẲNG vào vấn đề: KHÔNG chào hỏi (ví dụ: cấm nói "Chào bạn", "Tôi có thể giúp...", "Vâng", "Dạ"), KHÔNG nói lời mở đầu sáo rỗng hay kết luận dư thừa. 
+1. ĐI THẲNG vào vấn đề: KHÔNG chào hỏi (ví dụ: cấm tuyệt đối nói "Chào bạn", "Tôi có thể giúp...", "Vâng", "Dạ"), KHÔNG nói lời mở đầu sáo rỗng hay kết luận dư thừa. 
 2. Văn phong tự nhiên, chân thật, mượt mà và có hồn như một con người thực thụ đang viết văn bản. Tránh tuyệt đối sự máy móc, rập khuôn.
 3. Sử dụng chiều sâu cảm xúc, lập luận sắc sảo, câu từ có lực để lôi cuốn người đọc.`;
 
         window.onload = () => {
             loadApiKeys();
-            if(!apiKeys[0] && !apiKeys[1] && !apiKeys[2]){
-                showToast("Vui lòng nhập tối đa 3 API Key của Groq để bắt đầu!", "warning");
+            if (!hasAnyKey()) {
+                showToast("Bạn cần thiết lập ít nhất 1 API Key của Groq để sử dụng ứng dụng nhé!", "warning");
                 switchView('settingsView');
             }
             
-            // Theo dõi đếm câu hỏi từ người dùng
+            // Lắng nghe đếm dòng câu hỏi
             const qInput = document.getElementById('questionInput');
             qInput.addEventListener('input', () => {
                 const lines = qInput.value.split('\n').filter(line => line.trim() !== '');
@@ -235,13 +249,26 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
             });
         };
 
-        // --- QUẢN LÝ VIEW ---
+        // --- ĐIỀU HƯỚNG VIEW ---
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
         }
 
-        // --- QUẢN LÝ API KEYS ---
+        // --- CHỐT CHẶN CÀI ĐẶT ---
+        function openSettings() {
+            switchView('settingsView');
+        }
+
+        function closeSettings() {
+            if (!hasAnyKey()) {
+                showToast("Vui lòng cấu hình ít nhất 1 API Key của Groq trước khi đóng cài đặt!", "warning");
+                return;
+            }
+            switchView('mainView');
+        }
+
+        // --- XỬ LÝ API KEYS ---
         function loadApiKeys() {
             for(let i=1; i<=3; i++) {
                 const key = localStorage.getItem(`groq_api_${i}`) || '';
@@ -250,33 +277,43 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
             }
         }
 
-        function saveApiKeys() {
-            let hasKey = false;
+        function hasAnyKey() {
+            return apiKeys.some(k => k.trim() !== '');
+        }
+
+        // Lưu key tự động (Không hiện Toast gây phiền hà khi blur)
+        function saveApiKeysSilently() {
             for(let i=1; i<=3; i++) {
                 const val = document.getElementById(`api${i}`).value.trim();
                 localStorage.setItem(`groq_api_${i}`, val);
                 apiKeys[i-1] = val;
-                if(val) hasKey = true;
             }
-            if(hasKey) {
-                showToast("Đã ghi nhận cấu hình API Keys thành công!", "success");
-                switchView('mainView');
-            } else {
-                showToast("Bạn cần chuẩn bị ít nhất một API Key nhé!", "warning");
-            }
-            currentKeyIndex = 0; // Reset index xoay vòng
         }
 
-        // Auto lưu key khi mất tiêu điểm (blur)
+        // Lưu key thủ công khi bấm nút (Hiện Toast phản hồi)
+        function saveApiKeys(showFeedback = false) {
+            saveApiKeysSilently();
+            if (hasAnyKey()) {
+                if (showFeedback) showToast("Đã lưu và áp dụng cấu hình API thành công!", "success");
+                switchView('mainView');
+            } else {
+                if (showFeedback) showToast("Bạn phải nhập tối thiểu 1 API Key!", "error");
+            }
+            currentKeyIndex = 0; // Reset chỉ mục xoay vòng
+        }
+
+        // Đăng ký sự kiện lưu ngầm khi nhập liệu xong
         ['api1', 'api2', 'api3'].forEach(id => {
-            document.getElementById(id).addEventListener('blur', saveApiKeys);
+            document.getElementById(id).addEventListener('blur', saveApiKeysSilently);
         });
 
-        // --- ENGINE XỬ LÝ LỌC & GỌI AI ---
+        // --- TIẾN TRÌNH XỬ LÝ CÂU HỎI ---
         async function startProcessing() {
+            saveApiKeysSilently(); // Đảm bảo toàn bộ key mới nhất đã được nạp
             const activeKeys = apiKeys.filter(k => k !== '');
+
             if(activeKeys.length === 0) {
-                showToast("Bạn chưa cài đặt API Key nào! Hãy mở mục cài đặt (biểu tượng chìa khóa).", "error");
+                showToast("Hệ thống chưa có API Key nào hoạt động! Hãy cấu hình ngay.", "error");
                 switchView('settingsView');
                 return;
             }
@@ -285,59 +322,90 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
             const questions = rawText.split('\n')
                                      .map(q => q.trim())
                                      .filter(q => q !== '')
-                                     .slice(0, 50); // Khống chế chuẩn tối đa 50 câu
+                                     .slice(0, 50);
 
             if(questions.length === 0) {
-                showToast("Hãy nhập nội dung câu hỏi trước đã bạn ơi!", "warning");
+                showToast("Bạn ơi, hãy nhập ít nhất một câu hỏi đã nhé!", "warning");
                 return;
             }
 
-            // Tiến hành chuyển view chạy ngầm
+            // Nếu không phải là trạng thái nối tiếp ("Tiếp +"), tiến hành dọn sạch dữ liệu cũ
+            if (!isAppending) {
+                finalGeneratedText = "";
+            }
+
+            // Chuyển sang View Chạy Tiến Trình
             switchView('runningView');
             const progressText = document.getElementById('progressText');
             const progressBar = document.getElementById('progressBar');
             const percentageText = document.getElementById('percentageText');
             const currentQPreview = document.getElementById('currentQuestionPreview');
 
+            // Reset hộp cảnh báo lỗi
+            document.getElementById('errorAlertBox').classList.add('hidden');
+            document.getElementById('resultStatusIcon').className = "w-20 h-20 bg-violet-100 text-violet-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm";
+            document.getElementById('resultStatusIcon').innerHTML = `<i class="fa-solid fa-award"></i>`;
+            document.getElementById('resultTitle').innerText = "Đã hoàn thành!";
+            document.getElementById('resultSubtitle').innerText = "Nội dung của các câu hỏi được nối thẳng mạch lạc thành một bài viết hoàn chỉnh.";
+
+            let hasError = false;
+            let errorMessage = "";
+
             for (let i = 0; i < questions.length; i++) {
                 progressText.innerText = `Câu ${i + 1} / ${questions.length}`;
                 const pct = Math.round((i / questions.length) * 100);
                 progressBar.style.width = `${pct}%`;
                 percentageText.innerText = `${pct}%`;
-                currentQPreview.innerText = questions[i].substring(0, 100) + (questions[i].length > 100 ? "..." : "");
+                currentQPreview.innerText = questions[i].substring(0, 80) + (questions[i].length > 80 ? "..." : "");
 
                 try {
                     const answer = await fetchFromGroqWithFailover(questions[i]);
-                    // Dán thẳng câu trả lời tiếp nối trực tiếp vào văn bản, không để lại câu hỏi hay đường kẻ phân cách nào cả.
+                    // Chỉ dán thẳng câu trả lời tiếp nối không ranh giới, không chêm câu hỏi
                     finalGeneratedText += answer + "\n\n";
                 } catch (error) {
-                    showToast(`Sự cố tại câu số ${i+1}: ${error.message}. Tiến trình bị gián đoạn.`, "error");
-                    break; 
+                    hasError = true;
+                    errorMessage = `Gặp sự cố tại câu hỏi thứ ${i + 1}. Chi tiết: ${error.message}`;
+                    break; // Ngắt tiến trình lập tức khi hết key dự phòng
                 }
             }
 
+            // Hoàn tất tiến trình xử lý
             progressBar.style.width = `100%`;
             percentageText.innerText = `100%`;
-            
+
             setTimeout(() => {
+                if (hasError) {
+                    // Cấu hình lại màn hình kết quả thành trạng thái Hoàn Thành Một Phần do lỗi
+                    document.getElementById('resultStatusIcon').className = "w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm animate-pulse";
+                    document.getElementById('resultStatusIcon').innerHTML = `<i class="fa-solid fa-circle-exclamation"></i>`;
+                    document.getElementById('resultTitle').innerText = "Hoàn thành một phần";
+                    document.getElementById('resultSubtitle').innerText = "Hệ thống đã lưu lại tối đa phần nội dung được tạo trước khi lỗi xảy ra.";
+                    document.getElementById('errorAlertMessage').innerText = errorMessage;
+                    document.getElementById('errorAlertBox').classList.remove('hidden');
+                }
+                
                 switchView('resultView');
                 document.getElementById('questionInput').value = ''; 
                 document.getElementById('lineCount').innerText = `0 / 50 câu hỏi`;
+                isAppending = false; // Trả về trạng thái mặc định
             }, 600);
         }
 
-        // Logic Xoay Vòng API Cực Nhạy (Failover)
+        // Cơ chế Failover thông minh tránh chia cho 0
         async function fetchFromGroqWithFailover(question) {
             const activeKeys = apiKeys.filter(k => k !== '');
+            if (activeKeys.length === 0) {
+                throw new Error("Không có API Key nào hoạt động.");
+            }
+
             let attempts = 0;
             const maxAttempts = activeKeys.length;
 
             while (attempts < maxAttempts) {
-                // Lấy key hiện tại theo cơ chế luân phiên
+                // Đảm bảo chia lấy dư an toàn, không bao giờ chia cho 0
                 const currentKey = activeKeys[currentKeyIndex % activeKeys.length];
                 
                 try {
-                    // Gọi API chính chủ của Groq bằng Llama-3-70B
                     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
                         headers: {
@@ -345,7 +413,7 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            model: "llama3-70b-8192", // Lực sĩ văn học Llama 70B
+                            model: "llama-3.3-70b-versatile", // Diva thế hệ mới đỉnh cao của Groq
                             messages: [
                                 { role: "system", content: SYSTEM_PROMPT },
                                 { role: "user", content: question }
@@ -359,56 +427,58 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
                         const data = await response.json();
                         return data.choices[0].message.content.trim();
                     } else {
-                        throw new Error(`Mã phản hồi lỗi: ${response.status}`);
+                        throw new Error(`Groq phản hồi lỗi trạng thái ${response.status}`);
                     }
                 } catch (err) {
-                    console.warn(`API số ${currentKeyIndex + 1} gặp lỗi, hệ thống tự động nhảy sang API kế tiếp...`);
-                    currentKeyIndex++; // Chuyển sang key dự phòng tiếp theo
+                    console.warn(`Key số ${currentKeyIndex + 1} gặp lỗi, tự động chuyển sang key dự phòng tiếp theo...`);
+                    currentKeyIndex++; 
                     attempts++;
                 }
             }
-            throw new Error("Tất cả các API dự phòng đều bất lực. Bạn vui lòng kiểm tra lại key!");
+            throw new Error("Tất cả API Key dự phòng đều đã cạn kiệt hoặc bị lỗi giới hạn cuộc gọi!");
         }
 
-        // --- CÁC NÚT ĐIỀU HƯỚNG ---
+        // --- CÁC PHÍM CHỨC NĂNG KẾT QUẢ ---
 
-        // Nút 1: Tải File Txt
+        // Nút 1: Tải văn bản (.txt)
         function downloadFile() {
             if(!finalGeneratedText.trim()) {
-                showToast("Không tìm thấy nội dung văn bản nào để kết xuất!", "warning");
+                showToast("Không tìm thấy bất kỳ dữ liệu nào để xuất bản!", "warning");
                 return;
             }
             const blob = new Blob([finalGeneratedText], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `AI_Sáng_Tác_70B_${new Date().getTime()}.txt`;
+            a.download = `Sáng_tác_Llama_70B_${new Date().getTime()}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast("Tuyệt vời! File văn bản .txt đã được tải về máy của bạn.", "success");
+            showToast("Đã tải tệp văn bản .txt thành công về thiết bị của bạn!", "success");
         }
 
-        // Nút 2: Soi & Sửa
+        // Nút 2: Soi & Chỉnh sửa trực tiếp
         function viewContent() {
             switchView('editView');
             document.getElementById('editorInput').value = finalGeneratedText;
         }
 
+        // Lưu bản chỉnh sửa từ View Sửa
         function saveEdit() {
             finalGeneratedText = document.getElementById('editorInput').value;
-            showToast("Thay đổi nội dung đã được lưu lại thành công!", "success");
+            showToast("Bản chỉnh sửa văn bản đã được cập nhật thành công!", "success");
             switchView('resultView');
         }
 
-        // Nút 3: Hỏi Tiếp +
+        // Nút 3: Tiếp + (Nối tiếp dữ liệu)
         function continueAsking() {
+            isAppending = true; // Kích hoạt cờ cho phép dán tiếp vào chuỗi cũ
             switchView('mainView');
-            showToast("Hãy tiếp tục gõ câu hỏi để ghép nối thêm vào văn bản nhé!", "info");
+            showToast("Chế độ Nối tiếp đã sẵn sàng! Câu trả lời mới sẽ được tự động ghép nối vào cuối file.", "info");
         }
 
-        // Nút 4: Xóa toàn bộ dữ liệu (Với Modal tùy chỉnh an toàn)
+        // Nút 4: Xóa toàn bộ dọn dẹp bộ nhớ tạm
         function showConfirmModal() {
             document.getElementById('customConfirmModal').classList.remove('hidden');
             document.getElementById('customConfirmModal').classList.add('flex');
@@ -421,14 +491,15 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
 
         function confirmResetAll() {
             finalGeneratedText = "";
+            isAppending = false;
             document.getElementById('questionInput').value = "";
             document.getElementById('lineCount').innerText = `0 / 50 câu hỏi`;
             closeConfirmModal();
             switchView('mainView');
-            showToast("Bảng nhớ tạm đã được thiết lập lại từ đầu!", "success");
+            showToast("Bộ nhớ tạm đã được xóa sạch. Hệ thống đã trở về trạng thái ban đầu!", "success");
         }
 
-        // --- TOAST THÔNG BÁO ---
+        // --- TIỆN ÍCH TOAST THÔNG BÁO ---
         let toastTimeout;
         function showToast(message, type = "info") {
             const toast = document.getElementById('toast');
@@ -451,7 +522,7 @@ BẮT BUỘC TUÂN THỦ CÁC QUY TẮC SAU:
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, 4000);
         }
     </script>
 </body>
